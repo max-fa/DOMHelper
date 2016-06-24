@@ -1,25 +1,45 @@
-define(function() {
-	function $readyStateHandler(success,failure) {
+"use strict";
+(function() {
+	function $readyStateHandler(success,failure,complete,xhr) {
 		try {
 			switch(xhr.readyState) {
 				case 0:
-					console.log("Readystate: " + xhr.readyState + "Request has not been opened yet");
+					//request is pristine
 					break;
 				case 1:
-					console.log("Readystate: " + xhr.readyState + "Request has been opened,headers can now be set before calling the send() method.");
+					//request has been opened
 					break;
 				case 2:
-					console.log("Readystate: " + xhr.readyState + "Request has been sent and response headers have been received.");
+					//response headers have been sent
 					break;
 				case 3:
-					console.log("Readystate: " + xhr.readyState + "Response is being formulated.");
+					//response in progress
 					break;
 				case 4:
-					console.log("Readystate: " + xhr.readyState + "Response has been recieved.Check to see if it was a successful request or if the server returned an error.");
+					//response has been received
+					if(complete) {complete(xhr)}
 					if(xhr.status === 200) {
-						success(xhr);
+						//if success callback was provided
+						if(success !== null || undefined) {
+							console.log("Success: response returned with a status code of " + xhr.status);
+							success(xhr);
+						} 
+						//if success callback was not provided
+						else {
+							console.log("Success: response returned with a status code of " + xhr.status);
+							console.log(xhr);
+						}
 					} else {
-						failure(xhr);
+						//if failure callback was provided
+						if(failure !== null || undefined) {
+							console.log("Failure: response returned with a status code of " + xhr.status);
+							failure(xhr);
+						} 
+						//if failure callback was not provided
+						else {
+							console.log("Failure: response returned with a status code of " + xhr.status);
+							console.log(xhr);
+						}
 					}
 					break;
 				default:
@@ -27,22 +47,22 @@ define(function() {
 					break;
 			}		
 		} catch(e) {
-			console.log("Caught an exception: " + e.description);
+			console.log(e);
 		}
 
 	}
 	
-	function checkParams(args) {
+	function $checkParams(args) {
 		//args is the arguments array from the request method in the Ajax object.
 		
-		if(Object.prototype.isPrototypeOf(args[0])) {
+		if( args[1] === undefined ) {
 			//user passed an object of options rather than a series of parameters
-			
 			var options = args[0];
 			
 			//check for and validate url and method options
 			if(options.url && options.method) {
-				if(typeof options.url && options.method !== "string") {
+				if(typeof (options.url && options.method) !== "string") {
+					console.log(typeof (options.url && options.method));
 					console.log("url and method options must be strings.");
 					return [false];
 				}
@@ -92,7 +112,7 @@ define(function() {
 						}
 						break;
 					default:
-						return [true];
+						return [true,"object"];
 						break;
 				}
 			}
@@ -117,43 +137,41 @@ define(function() {
 					case "success":
 						if(typeof option !== "function" || null) {
 							console.log("success handler needs to be a function.");
-							return;
+							return [false];
 						}
 						break;
 					case "failure":
 						if(typeof option !== "function" || null) {
 							console.log("falure handler needs to be a function.");
-							return;
+							return [false];
 						}
-						return [false];
 						break;
 					case "dataFilter":
 						if(typeof option !== "function" || null) {
 							console.log("dataFilter calllback must be a function.");
 							return [false];
 						}
-						return [false];
 						break;
 					case "beforeSend":
 						if(typeof option !== "function" || null) {
 							console.log("beforeSend callback must be a function.");
+							return [false];
 						}
-						return [false];
 						break;
 					case "afterSend":
 						if(typeof option !== "function" || null) {
 							console.log("afterSend callback must be a function.");
+							return [false];
 						}
-						return [false];
 						break;
 					case "complete":
 						if(typeof option !== "function" || null) {
 							console.log("onComplete callback must be a function");
+							return [false];
 						}
-						return [false];
 						break;
 					default:
-						//do nothing
+						[true,"array"];
 						break;
 				}	
 			}
@@ -163,16 +181,16 @@ define(function() {
 	
 	
 	
+	//define ajax component
 	var Ajax = {
-		request: function(url,method,data,success,failure,beforeSend,afterSend,complete) {
+		request: function(url,method,data,success,failure,dataFilter,beforeSend,afterSend,complete) {
 			var xhr;
-			
 			//make request here.
 			if(xhr = new XMLHttpRequest()) {
 				//If xhr object is created successfully:
 				
 				//validate parameters and verify if they were passed in as an object or one by one.
-				var validation = checkParams(arguments);
+				var validation = $checkParams(Array.prototype.slice.call(arguments));
 				//check if validation succeeded,end everything if it did not
 				if(validation[0] === false) {
 					return;
@@ -180,52 +198,75 @@ define(function() {
 				
 				//if parameters were passed in as an object
 				if(validation[1] === "object") {
-					//use options only if checkParams() returns "object": 
+					//use options only if $checkParams() returns "object": 
 					//it is meant to rename the first parameter to a more meaningful name if the user passed an object of parameters.
 					var options = url;	
 					
-					xhr.onreadystatechange = $readyStateHandler;
+					xhr.onreadystatechange = function() {
+						var callbacks = [options.success,options.failure,options.complete,xhr];
+						$readyStateHandler.apply(window,callbacks);
+					}
+						
+						/*//if user passed any lifecycle(success,failure,or complete) callbacks,pass them to $readyStateHandler
+						//if not,just call readyStateHandler and let it default on them
+						if(callbacks.length > 0) {
+							$readyStateHandler.apply(window,callbacks)
+						} else {
+							$readyStateHandler();
+						}*/
+					//}
 					xhr.open(options.method.toUpperCase(),options.url);
 					if(options.data) {
 						if(options.dataFilter) {
-							options.dataFilter(options.data);
+							options.data = options.dataFilter(options.data);
 						} else {
-							JSON.stringify(options.data);
+							options.data = JSON.stringify(options.data);
 						}
 					
-						options.beforeSend(xhr);
+						if(options.beforeSend) {options.beforeSend(xhr);}
 						xhr.send(options.data);
-						options.afterSend(xhr);
+						if(options.afterSend) {options.afterSend(xhr);}
 					} else {
-						options.beforeSend(xhr);
+						if(options.beforeSend) {options.beforeSend(xhr);}
 						xhr.send();
-						options.afterSend(xhr);
+						if(options.afterSend) {options.afterSend(xhr);}
 					}
 				} 
 				//if parameters were passed in one by one
 				else {
-					xhr.onreadystatechange = readyStateHandler;
-					xhr.open(options.method.toUppercase(),options.url);
+					xhr.onreadystatechange = function() {
+						var callbacks = [success,failure,complete,xhr];
+						$readyStateHandler.apply(window,callbacks);
+					};
+					xhr.open(method.toUpperCase(),url);
 					if(options.data) {
 						if(dataFilter) {
-							dataFilter(data);
+							data = dataFilter(data);
 						} else {
-							JSON.stringify(data);
+							data = JSON.stringify(data);
 						}
 						
-						beforeSend(xhr);
+						if(beforeSend) {beforeSend(xhr);}
 						xhr.send(data);
-						afterSend(xhr);
+						if(afterSend) {afterSend(xhr);}
 					} else {
-						options.beforeSend(xhr);
+						if(beforeSend) {beforeSend(xhr);}
 						xhr.send();
-						afterSend(xhr);
+						if(afterSend) {afterSend(xhr);}
 					}
 				}
 			} else {
 				console.log("Could not create an XHR object.");
 			}
-		}	
+		}
 	};
-	return Ajax;
-});
+	
+	
+	
+	if(window.DOMHelper) {
+		window.DOMHelper.Ajax = Ajax;
+	} else {
+		window.DOMHelper = {};
+		window.DOMHelper.Ajax = Ajax;
+	}
+})();
