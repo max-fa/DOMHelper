@@ -4,7 +4,7 @@ window.onload = function() {
 	//alert("Loadedd!");
 	var Ajax = window.DOMHelper.Ajax;
 	document.getElementById("button").onclick = function() {
-		Ajax.request({
+		/*Ajax.request({
 			url: "http://localhost/my_docs/resources/DOMHelper/test.php",
 			method: "POST",
 			data: [1,2,3],
@@ -20,6 +20,22 @@ window.onload = function() {
 			complete: function(request) {
 				console.log(request);
 			}
-		});
+		});*/
+		
+		Ajax.request("http://localhost/my_docs/resources/DOMHelper/test.php","post",[1,2,3],function(request) {
+			console.log(request);
+		},
+		function(request) {
+			console.log(request);
+		},
+		function(data) {
+			return JSON.stringify(data);
+		},
+		null,
+		null,
+		function(response) {
+			console.log(response);
+		}
+		);
 	}
 };

@@ -61,8 +61,7 @@
 			
 			//check for and validate url and method options
 			if(options.url && options.method) {
-				if(typeof (options.url && options.method) !== "string") {
-					console.log(typeof (options.url && options.method));
+				if( typeof options.url !== "string" || typeof options.method !== "string" ) {
 					console.log("url and method options must be strings.");
 					return [false];
 				}
@@ -121,7 +120,7 @@
 			//user passed each parameter individually
 			//check for and validate url and method options
 			if(args[0] && args[1]) {
-				if(typeof args[0] && args[1] !== "string") {
+				if( typeof args[0] !== "string" || typeof args[1] !== "string" ) {
 					console.log("url and method options must be strings.");
 					return [false];
 				}
@@ -184,6 +183,7 @@
 	//define ajax component
 	var Ajax = {
 		request: function(url,method,data,success,failure,dataFilter,beforeSend,afterSend,complete) {
+			console.log(arguments);
 			var xhr;
 			//make request here.
 			if(xhr = new XMLHttpRequest()) {
@@ -239,7 +239,7 @@
 						$readyStateHandler.apply(window,callbacks);
 					};
 					xhr.open(method.toUpperCase(),url);
-					if(options.data) {
+					if(data) {
 						if(dataFilter) {
 							data = dataFilter(data);
 						} else {
