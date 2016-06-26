@@ -22,7 +22,7 @@ window.onload = function() {
 			}
 		});*/
 		
-		Ajax.request("http://localhost/my_docs/resources/DOMHelper/test.php","post",[1,2,3],function(request) {
+		/*Ajax.request("http://localhost/my_docs/resources/DOMHelper/test.php","post",[1,2,3],function(request) {
 			console.log(request);
 		},
 		function(request) {
@@ -36,6 +36,9 @@ window.onload = function() {
 		function(response) {
 			console.log(response);
 		}
-		);
+		);*/
+		
+		var form = DOMHelper.Component.create("testForm");
+		console.log(form.getRoot());
 	}
 };

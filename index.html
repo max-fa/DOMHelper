@@ -1,11 +1,22 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<meta charset="utf-8"/>
 		<title>Test Ajaxs</title>
 		<script src="http://localhost/my_docs/resources/DOMHelper/Ajax.js"></script>
+		<script src="http://localhost/my_docs/resources/DOMHelper/Component.js"></script>
 		<script src="http://localhost/my_docs/resources/DOMHelper/testAjax.js"></script>
 	</head>
 	<body>
 		<button id="button">Click me!</button>
+		<div id="form-container">
+			<form data-component="testForm">
+				<label for="first-name">First Name: </label>
+				<input id="first-name" type="text"/>
+				
+				<label for="last-name">Last Name: </label>
+				<input id="last-name" type="text"/>
+			</form>
+		</div>
 	</body>
 </html>
