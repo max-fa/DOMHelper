@@ -9798,12 +9798,14 @@ jQuery.fn.andSelf = jQuery.fn.addBack;
 
 
 var
-
+//I commented this out to prevent this library from being exposed globally
 	// Map over jQuery in case of overwrite
 	//_jQuery = window.jQuery,
 
 	// Map over the $ in case of overwrite
 	//_$ = window.$;
+
+	
 
 /*jQuery.noConflict = function( deep ) {
 	if ( window.$ === jQuery ) {
