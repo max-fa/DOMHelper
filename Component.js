@@ -29,6 +29,7 @@
 	
 	if(window.DOMHelper) {
 		window.DOMHelper.Component = Component;
+		window.DOMHelper.data = {};
 	} else {
 		window.DOMHelper = {
 			Component: Component,
