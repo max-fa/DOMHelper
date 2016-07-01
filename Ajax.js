@@ -260,13 +260,5 @@
 			}
 		}
 	};
-	
-	
-	
-	if(window.DOMHelper) {
-		window.DOMHelper.Ajax = Ajax;
-	} else {
-		window.DOMHelper = {};
-		window.DOMHelper.Ajax = Ajax;
-	}
+	window.DOMHelper ? DOMHelper.Ajax = Ajax : window.DOMHelper = {Ajax: Ajax};
 })();

@@ -1,7 +1,5 @@
 "use strict";
 window.onload = function() {
-	//alert("Loadedd!");
-	//alert("Loadedd!");
 	var Ajax = window.DOMHelper.Ajax;
 	document.getElementById("button").onclick = function() {
 		/*Ajax.request({
@@ -38,7 +36,10 @@ window.onload = function() {
 		}
 		);*/
 		
-		var form = DOMHelper.Component.create("testForm");
-		console.log(form.getRoot());
+		//var form = DOMHelper.Component.create("testForm");
+		//console.log(form.getRoot());
+		
+
 	}
+	
 };

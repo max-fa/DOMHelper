@@ -1,7 +1,3 @@
-"use strict";
-
-
-
 /*
 	This is a copy of the Jquery 2.2.0 source code.
 	I have modified it for my own purposes.
@@ -9775,56 +9771,20 @@ jQuery.fn.andSelf = jQuery.fn.addBack;
 
 
 
-
-// Register as a named AMD module, since jQuery can be concatenated with other
-// files that may use define, but not via a proper concatenation script that
-// understands anonymous AMD modules. A named AMD is safest and most robust
-// way to register. Lowercase jquery is used because AMD module names are
-// derived from file names, and jQuery is normally delivered in a lowercase
-// file name. Do this after creating the global so that if an AMD module wants
-// to call noConflict to hide this version of jQuery, it will work.
-
-// Note that for maximum portability, libraries that are not jQuery should
-// declare themselves as anonymous modules, and avoid setting a global if an
-// AMD loader is present. jQuery is a special case. For more information, see
-// https://github.com/jrburke/requirejs/wiki/Updating-existing-libraries#wiki-anon
-
-/*if ( typeof define === "function" && define.amd ) {
-	define( "jquery", [], function() {
-		return jQuery;
-	} );
-}*/
-
-
-
-var
-//I commented this out to prevent this library from being exposed globally
-	// Map over jQuery in case of overwrite
-	//_jQuery = window.jQuery,
-
-	// Map over the $ in case of overwrite
-	//_$ = window.$;
-
-	
-
-/*jQuery.noConflict = function( deep ) {
-	if ( window.$ === jQuery ) {
-		window.$ = _$;
+//expose the jQuery factory function via the DOMHelper.DOMUTils.get method
+if ( !noGlobal ) {
+	if(window.DOMHelper) {
+		window.DOMHelper.DOMUtils = {
+			get: jQuery
+		};
+	} else {
+		window.DOMHelper = {
+			DOMUtils: {
+				get: jQuery
+			}
+		};
 	}
-
-	if ( deep && window.jQuery === jQuery ) {
-		window.jQuery = _jQuery;
-	}
-
-	return jQuery;
-};*/
-
-// Expose jQuery and $ identifiers, even in AMD
-// (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
-// and CommonJS for browser emulators (#13566)
-/*if ( !noGlobal ) {
-	window.jQuery = window.$ = jQuery;
-}*/
+}
 
 return jQuery;
 }));
