@@ -9780,7 +9780,7 @@ if ( !noGlobal ) {
 	} else {
 		window.DOMHelper = {
 			DOMUtils: {
-				get: jQuery
+				$: jQuery
 			}
 		};
 	}

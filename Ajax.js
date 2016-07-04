@@ -260,5 +260,5 @@
 			}
 		}
 	};
-	window.DOMHelper ? DOMHelper.Ajax = Ajax : window.DOMHelper = {Ajax: Ajax};
+	window.DOMHelper ? DOMHelper.Ajax = Ajax : window.DOMHelper = { Ajax: Ajax };
 })();

@@ -9,8 +9,8 @@
 		<script src="http://localhost/my_docs/resources/jQuery/jquery-2.2.0.js"></script>
 		<script src="http://localhost/my_docs/resources/DOMHelper/test.js"></script>
 	</head>
-	<body>
-		<button id="button">Click me!</button>
+	<body data-component="MainComponent">
+		<button id="button" directive="alerty">Click me!</button>
 		<div id="form-container">
 			<form data-component="testForm">
 				<label for="first-name">First Name: </label>
@@ -18,6 +18,7 @@
 				
 				<label for="last-name">Last Name: </label>
 				<input id="last-name" type="text"/>
+				<button directive="onClick">Submit</button>
 			</form>
 		</div>
 	</body>
