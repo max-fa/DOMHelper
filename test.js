@@ -35,7 +35,7 @@ var Ajax = window.DOMHelper.Ajax;
 	);*/
 	
 	var formComponent = DOMHelper.Component.create("testForm");
-	formComponent.directives.register(function onClick(jQuery) {
+	formComponent.directives.register("onClick",function(jQuery) {
 		var $ = jQuery;
 		$(this).on("click",function(evt) {
 			alert("You're about to submit the form");
@@ -43,12 +43,12 @@ var Ajax = window.DOMHelper.Ajax;
 	});
 	
 	var MainComponent = DOMHelper.Component.create("MainComponent");
-	MainComponent.directives.register(function alerty(jQuery) {
+	MainComponent.directives.register("alerty",function(jQuery) {
 		var $ = jQuery;
 		$(this).on("click",function(evt) {
 			alert("Boo!!!!!!!!!!!!!!");
 		});
-	}).register(function another($) {
+	}).register("another",function($) {
 		$(this).on("click",function(evt) {
 			console.log(this);
 		});

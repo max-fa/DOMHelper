@@ -40,22 +40,22 @@
 		}		
 	}
 	
-	function $registerDirective(fn) {
+	function $registerDirective(name,fn) {
 		
 		//check if directive is a function
 		if( Function.prototype.isPrototypeOf(fn) ) {
 			console.log(fn);
 			
-			//check if the function has a name
-			if( fn.name ) {
+			//check if the directive has a name
+			if( name ) {
 			
 				console.log("It's got a name");
 				//boolean representing if a directive name has already been taken.
-				var nameTaken = $checkForDirective(fn.name);
+				var nameTaken = $checkForDirective(name);
 				
 				if(!nameTaken) {
-				
-					$directiveStore.push(fn);
+					
+					$directiveStore.push( {exe: fn,name: name}) ;
 					
 				} else {
 				
@@ -97,7 +97,7 @@
 		}
 		
 		
-		directive.call(el,$);
+		directive.exe.call(el,$);
 		
 	}
 	
@@ -110,8 +110,8 @@
 		//expose the $register method
 		directives: {
 		
-			register: function(fn) {
-				$registerDirective(fn);
+			register: function(name,fn) {
+				$registerDirective(name,fn);
 				return this;
 			}
 			
