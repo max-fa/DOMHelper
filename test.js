@@ -48,4 +48,8 @@ var Ajax = window.DOMHelper.Ajax;
 		$(this).on("click",function(evt) {
 			alert("Boo!!!!!!!!!!!!!!");
 		});
+	}).register(function another($) {
+		$(this).on("click",function(evt) {
+			console.log(this);
+		});
 	});

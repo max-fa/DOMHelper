@@ -6,19 +6,19 @@
 		<script src="http://localhost/my_docs/resources/DOMHelper/DOMUtils.js"></script>
 		<script src="http://localhost/my_docs/resources/DOMHelper/Ajax.js"></script>
 		<script src="http://localhost/my_docs/resources/DOMHelper/Component.js"></script>
-		<script src="http://localhost/my_docs/resources/jQuery/jquery-2.2.0.js"></script>
+		<!--<script src="http://localhost/my_docs/resources/jQuery/jquery-2.2.0.js"></script>-->
 		<script src="http://localhost/my_docs/resources/DOMHelper/test.js"></script>
 	</head>
 	<body data-component="MainComponent">
 		<button id="button" directive="alerty">Click me!</button>
 		<div id="form-container">
 			<form data-component="testForm">
-				<label for="first-name">First Name: </label>
+				<label for="first-name" directive="another">First Name: </label>
 				<input id="first-name" type="text"/>
 				
 				<label for="last-name">Last Name: </label>
 				<input id="last-name" type="text"/>
-				<button directive="onClick">Submit</button>
+				<button directive="onClick" type="button">Submit</button>
 			</form>
 		</div>
 	</body>

@@ -11,63 +11,96 @@
 	
 	var $directiveStore = [];
 	
-	var $directives = {
-		$register: function(fn) {
-			if( Function.prototype.isPrototypeOf(fn) ) {
+	function $checkForDirective(name) {
+		//if there is already a directive stored,begin looping to check for name collisions
+		if( $directiveStore.length > 0 ) {
+		
+			console.log("This should log for all directives after the first directive.");
+			for( var i = 0; i < $directiveStore.length; i++ ) {
 			
-				if( fn.name ) {
+				var storedName = $directiveStore[i].name;
+				console.log("We are in the loop");
+				if( name === storedName ) {
 				
-					if( $directiveStore.length > 0 ) {
-						
-						for( var i = 0; i < $directiveStore.length; i++ ) {
-							var storedName = $directiveStore[i].name;
-							console.log("loopy");
-							if( storedName ) {
-							
-								console.log("so far");
-								fn.name === storedName ? console.log("Cannot register directive: name already taken.") : $directiveStore.push(fn);
-								
-							} else {
-							
-								$directiveStore.push(fn);
-								
-							}
-							console.log($directiveStore);
-						}						
-						
-					} else {
-						$directiveStore.push(fn);
-					}
-
+					return true;
 					
 				} else {
-					console.log("must use a named function");
+					
 					return false;
-				}				
+					
+				}
+				
+			}
+		//if there are no elements in $directiveStore,just return false
+		} else {
+			
+			console.log("It's been going here the whole time");
+			return false;
+			
+		}		
+	}
+	
+	function $registerDirective(fn) {
+		
+		//check if directive is a function
+		if( Function.prototype.isPrototypeOf(fn) ) {
+			console.log(fn);
+			
+			//check if the function has a name
+			if( fn.name ) {
+			
+				console.log("It's got a name");
+				//boolean representing if a directive name has already been taken.
+				var nameTaken = $checkForDirective(fn.name);
+				
+				if(!nameTaken) {
+				
+					$directiveStore.push(fn);
+					
+				} else {
+				
+					console.log("Cannot register directive: name already taken.");
+					return false;
+					
+				}
 				
 			} else {
 			
-				console.log("Directive must be a function.");
+				console.log("must use a named function");
 				return false;
 				
-			}
-		},
-		
-	
-		
-		$run: function(name,el) {
-		
-			var fn;
-			var i = 0;
-			while( i < $directiveStore.length ) {
+			}				
 			
-				fn = $directiveStore[i];
-				fn.name === name ? ( fn( $(el) )) : i++;
-				
-			}
+		} else {
+		
+			console.log("Directive must be a function.");
+			return false;
 			
 		}
-	};
+	}
+	
+
+	
+	function $runDirective(/*name,el*/ directive,el) {
+		
+		var $;
+		/*var fn;
+		var i = 0;
+		while( i < $directiveStore.length ) {
+		
+			fn = $directiveStore[i];
+			fn.name === name ? ( fn( $(el) )) : i++;
+			
+		}*/
+		if(DOMHelper.DOMUtils.$) {
+			$ = DOMHelper.DOMUtils.$
+		}
+		
+		
+		directive.call(el,$);
+		
+	}
+	
 	
 	
 	
@@ -77,7 +110,10 @@
 		//expose the $register method
 		directives: {
 		
-			register: $directives.$register
+			register: function(fn) {
+				$registerDirective(fn);
+				return this;
+			}
 			
 		},
 		
@@ -127,8 +163,10 @@
 					var i = 0;
 					while(i < $directiveStore.length) {
 						if( dirName === $directiveStore[i].name ) {
-							$directiveStore[i].call(this,$);
+						
+							$runDirective($directiveStore[i],this);
 							break;
+							
 						}
 						i++;
 					}
