@@ -35,10 +35,10 @@ var Ajax = window.DOMHelper.Ajax;
 	);*/
 	
 	var formComponent = DOMHelper.Component.create("testForm");
-	formComponent.directives.register("onClick",function(jQuery) {
-		var $ = jQuery;
+	formComponent.directives.register("onClick",function($) {
 		$(this).on("click",function(evt) {
 			alert("You're about to submit the form");
+			formComponent.getUsers();
 		});		
 	});
 
@@ -48,13 +48,20 @@ var Ajax = window.DOMHelper.Ajax;
 		$(this).on("click",function(evt) {
 			alert("Boo!!!!!!!!!!!!!!");
 		});
-	});
-	MainComponent.directives.register("another",function($) {
+	}).directives.register("another",function($) {
 		$(this).on("click",function(evt) {
 			console.log(this);
 		});
 	});
 	
-	console.log( formComponent.directives.getAll() );
-	console.log( MainComponent.directives.getAll() );
+	formComponent.actions.register("setUsers",function(data) {
+		data.users = [
+			"Max",
+			"Ronald",
+			"Linus"
+		];
+	}).setUsers();
+	formComponent.actions.register("getUsers",function(data) {
+		console.log(data.users);
+	});
 	
