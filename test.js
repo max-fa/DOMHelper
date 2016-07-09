@@ -41,15 +41,20 @@ var Ajax = window.DOMHelper.Ajax;
 			alert("You're about to submit the form");
 		});		
 	});
-	
+
 	var MainComponent = DOMHelper.Component.create("MainComponent");
 	MainComponent.directives.register("alerty",function(jQuery) {
 		var $ = jQuery;
 		$(this).on("click",function(evt) {
 			alert("Boo!!!!!!!!!!!!!!");
 		});
-	}).register("another",function($) {
+	});
+	MainComponent.directives.register("another",function($) {
 		$(this).on("click",function(evt) {
 			console.log(this);
 		});
 	});
+	
+	console.log( formComponent.directives.getAll() );
+	console.log( MainComponent.directives.getAll() );
+	
