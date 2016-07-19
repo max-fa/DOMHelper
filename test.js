@@ -34,34 +34,11 @@ var Ajax = window.DOMHelper.Ajax;
 	}
 	);*/
 	
-	var formComponent = DOMHelper.Component.create("testForm");
-	formComponent.directives.register("onClick",function($) {
-		$(this).on("click",function(evt) {
-			alert("You're about to submit the form");
-			formComponent.getUsers();
-		});		
-	});
 
-	var MainComponent = DOMHelper.Component.create("MainComponent");
-	MainComponent.directives.register("alerty",function(jQuery) {
-		var $ = jQuery;
-		$(this).on("click",function(evt) {
-			alert("Boo!!!!!!!!!!!!!!");
-		});
-	}).directives.register("another",function($) {
-		$(this).on("click",function(evt) {
-			console.log(this);
-		});
-	});
+
+
 	
-	formComponent.actions.register("setUsers",function(data) {
-		data.users = [
-			"Max",
-			"Ronald",
-			"Linus"
-		];
-	}).setUsers();
-	formComponent.actions.register("getUsers",function(data) {
-		console.log(data.users);
-	});
+
+	
+
 	

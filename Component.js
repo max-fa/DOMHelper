@@ -3,6 +3,7 @@
 	var $components = [];
 	
 	function $createComponent($name) {
+	
 		if( !$name ) {
 		
 			console.log("Must provide a name for your component.");
@@ -11,11 +12,10 @@
 		} else {
 		
 			var component = Object.create(Component);
-			component.data = {};
 			var $root;
 			var $directiveStore = [];
 			var $actionStore = [];
-			var data = {};
+			var data = DOMHelper.DataUtils ? Object.create(DOMHelper.DataUtils) : {};
 			
 			
 			/*
@@ -63,7 +63,7 @@
 						if( !nameTaken ) {
 							
 							$directiveStore.push( {exe: fn,name: name});
-							return component;
+							return component.directives;
 							
 						} else {
 						
@@ -94,7 +94,7 @@
 				var $;
 				if( DOMHelper.DOMUtils.$ ) {
 				
-					$ = DOMHelper.DOMUtils.$
+					$ = DOMHelper.DOMUtils.$;
 					
 				}
 				
@@ -136,9 +136,9 @@
 							
 							component[name] = function() {
 								$runAction(name);
-							}
+							};
 							
-							return component;
+							return component.actions;
 							
 						} else {
 						
@@ -247,6 +247,7 @@
 							while( i < $directiveStore.length ) {
 							
 								if( dirName === $directiveStore[i].name ) {
+								
 									$runDirective($directiveStore[i],this);
 									break;
 									
@@ -267,11 +268,12 @@
 			
 			$components.push(component);
 			return component;
-		}		
+		}	
+		
 	}
 
 	var Component = {
-		//data: {},
+		data: {},
 		
 		create: $createComponent,
 		
@@ -284,13 +286,11 @@
 	if( window.DOMHelper ) {
 	
 		window.DOMHelper.Component = Component;
-		window.DOMHelper.data = {};
 		
 	} else {
 	
 		window.DOMHelper = {
 			Component: Component,
-			data: {},
 			ready: false
 		};
 		
