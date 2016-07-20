@@ -1,15 +1,112 @@
 (function() {
 
 	/*
+		START: POLYFILLS
+	*/
+	(function() {
+	
+		if (!Array.prototype.find) {
+		  Array.prototype.find = function(predicate) {
+			if (this == null) {
+			  throw new TypeError('Array.prototype.find called on null or undefined');
+			}
+			if (typeof predicate !== 'function') {
+			  throw new TypeError('predicate must be a function');
+			}
+			var list = Object(this);
+			var length = list.length >>> 0;
+			var thisArg = arguments[1];
+			var value;
+
+			for (var i = 0; i < length; i++) {
+			  value = list[i];
+			  if (predicate.call(thisArg, value, i, list)) {
+				return value;
+			  }
+			}
+			return undefined;
+		  };
+		}
+	
+	})();
+	/*
+		END: POLYFILLS
+	*/
+	
+	
+	
+	
+
+	var $computedPropertyCache = new WeakMap();
+	
+	
+	
+	
+	
+	/*
+		START SECTION: Data Basics
+	*/
+	
+	function $typeOf() {
+	
+		if( typeof this === "string" ) {
+		
+			return "string";
+		
+		} else if( typeof this === "number" ) {
+		
+			return "number";
+		
+		} else if( typeof this === "function" ) {
+		
+			return "function";
+		
+		} else if( Array.isArray(this)  ) {
+		
+			return "array";
+		
+		} else if( this.isPrototypeOf ) {
+		
+			return "plainobject";
+		
+		} else if( typeof this === "undefined" ) {
+		
+			return "undefined";
+		
+		} else if( this === "null" ) {
+		
+			return "null";
+		
+		} else if( this === true || this === false ) {
+		
+			return "boolean";
+		
+		}
+	
+	}
+	
+	/*
+		END SECTION: Data Basics
+	*/
+
+
+	
+	
+	
+	/*
 		START SECTION: Observables
 	*/
 
-	function $makeObservable(obj,type) {
+	function $makeObservable(observeThis) {
 	
+		//find the type of what's trying to be observed
+		var type = $typeOf.bind(observeThis)();
+		
+		//depending on the type,do something
 		switch( type ) {
 		
-			case "object":
-				$observeObject(obj);
+			case "plainobject":
+				$observePlainObject(obj);
 				break;
 				
 			case "array":
@@ -26,6 +123,20 @@
 				
 			case "boolean":
 				$observeBoolean(obj);
+				break;
+				
+			case "function":
+				console.log("Will fire a function when you attempt to observe it,so you're basically observing it's return value.");
+				$observeFunction(obj);
+				break;
+				
+			case "undefined":
+				console.log("Cannot observe undefined.");
+				return false;
+				break;
+				
+			case "null":
+				console.log("Cannot observe null");
 				break;
 		
 			default:
@@ -47,21 +158,19 @@
 		START SECTION: Computed Properties
 	*/
 
-	function $checkDeps(deps) {
+	/*
+		Checks if the array of dependencies is composed of observable values
+	*/
+	
+	function $depsObservable(deps) {
 	
 		var i = 0;
 		
 		while( i < deps.length ) {
-		
-			if( deps[i] === null || deps[i] === undefined ) {
 			
-				return false;
+			if( !$isObservable(deps[i]) ) {
 			
-			} 
-			
-			if( !deps[i].isObservable() ) {
-			
-				console.log("Can only declare an observable object as a dependency.Look up documentation on wrapping objects in the DataUtils.Observable object.");
+				console.log("Can only declare an observable object as a dependency.Look up documentation on making objects observable in DataUtils.js.");
 				return false;
 			
 			}
@@ -76,6 +185,32 @@
 	
 	
 	
+	
+	function $depsMissing(deps) {
+	
+		var i = 0;
+		
+		while( i < deps.length ) {
+		
+			if( deps[i] === null || deps[i] === undefined ) {
+			
+				console.log("Cannot compute value: blank dependency");
+				return false;
+			
+			}
+			
+			if( diff(deps[i]) ) {
+			
+				
+			
+			}
+		
+		}
+	
+	}
+	
+	
+	
 	/*
 
 		Defines a getter-only property on the specified calling object
@@ -85,64 +220,110 @@
 
 	*/	
 	
-	function $generateComputed(deps,name,fn) {
+	function $checkCache(obj,computedPropName) {
 	
-		var validParams = $checkComputedParams(arguments);
-		var reCompute;
+		var i = 0;
 		
-		if( validParams ) {
 		
-			//if a property exists on the calling object that already has a name equal to the name argument
-			if( this[name] ) {
+		//find the key in the $computedCache weakmap that contains the computed property info object and store the info object
+		var computedProp = $computedCache.get(obj).filter(function(el,index,computedPropsArray) {
+		
+			if( el.name === computedPropName ) {
 			
-				console.log( "Cannot use '" + name + "': name already taken." );
+				return true;
 			
 			} else {
 			
-				Object.defineProperty(this,name,{
-				
-					configurable: true,
-					
-					enumerable: true,
-					
-					writable: false,
-					
-					get: function() {
-					
-						var deps = $checkDeps(deps);
-						
-						if( deps === true ) {
-						
-							reCompute = $diff(this,name);
-							
-							if( reCompute ) {
-							
-								fn.bind(this);
-							
-							} else {
-							
-								return $getFromCache(this,name);
-							
-							}
-						
-						}
-						
-					},
-					
-					set: function(val) {
-					
-						console.log("Cannot set a computed property,you can only access or delete them.");
-						return false;
-					
-					}
-					
-				});
+				return false;
 			
 			}
 		
-		} else {
+		});
 		
-			return false;
+		/*
+			If the computedProperty doesn't have a result previously cached,return true.
+			If the computeProperty does have a cachedResult(other than null),check if it's dependencies have changed
+			if the dependencies have changed,return true,otherwise,false.
+		*/
+		if( computedProp.cachedResult === null ) {
+		
+			return true;
+		
+		} else {
+			
+			
+		
+		}
+	
+	}
+	
+	
+	
+	function $generateComputed(deps,name,fn) {
+		
+		//if a property exists on the calling object that already has a name equal to the name argument
+		if( this[name] ) {
+		
+			console.log( "Cannot use '" + name + "': name already taken." );
+		
+		} else {
+			
+			/*
+				now,actually create a computed property on this object while registering it internally
+			*/
+			
+			//define the computed property
+			Object.defineProperty(this,name,{
+		
+			configurable: true,
+			
+			enumerable: true,
+			
+			writable: false,
+			
+			get: function() {
+			
+				reCompute = $checkCache(this,name);
+				
+				if( reCompute ) {
+				
+					fn.bind(this)();
+				
+				} else {
+				
+					return $getFromCache(this,name);
+				
+				}
+				
+			},
+			
+			set: function(val) {
+			
+				console.log("Cannot set a computed property,you can only access or delete them.");
+				return false;
+			
+			}
+			
+			});
+			
+			
+			
+			//logic for caching the computed property
+			if( $computedCache.has(this) ) {
+			
+				//if this object is recorded in the computed properties cache,add a new record for this new computed proerty
+				var computedRecord = $computedCache.get(this);
+				computedRecord.push({ name:name,deps:deps,cachedResult:null });
+			
+			} else {
+			
+				//if this object isn't recorded in the computed properties cache,add this object as a key in the $computedCache weakmap
+				//and push an object corresponding to this computed property into the cache
+				$computedCache.set(this,[
+					{ name: name,deps:deps,cachedResult: null }
+				]);
+			
+			}
 		
 		}
 	
@@ -158,23 +339,14 @@
 		START SECTION: Exposing API
 	*/
 	
-	var DataStore = {
-		create: function() {
-		
-			return Object.create(this);
-		
-		},
-		
-		computedCache: $cache,
-		
-		computed: $generateComputed
-	};
-	
-	
-	
 	var DataUtils = {
-		Store: DataStore
+		
+		computed: $generateComputed,
+		
+		//collection: $generateCollection
 	};
+	
+	
 	
 	if( window.DOMHelper ) {
 	
