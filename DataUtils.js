@@ -410,6 +410,7 @@
 		
 		computedProp.cachedResult = result;
 		computedProp.cachedDeps = deps;
+		computedProp.called = true;
 		
 	
 	}
