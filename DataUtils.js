@@ -199,9 +199,22 @@
 		START SECTION: Computed Properties
 	*/
 	
-	//transform a deep dependency string into an array for each object path level
-	function $transformDep(depString) {
+	function $findComputed(searchParams) {
+	
+		return $computedRegistrar.get(searchParams.key).find(function(computedProp,index,computedRegistrar) {
+		
+			return computedProp.name === searchParams.propName;
+		
+		});
+	
+	}
+	
+	
+	//transform a deep dependency string into an array for each object property level
+	function $transformObjPath(depString,DATAOBJECT) {
 
+		//call .toString() to get raw string from possible String object which may contain enumerable properties
+		//that will interfere with iterating through the string. .toString() is synonymous with .toValue() in the context of string objects
 		var depPath = depString.toString();
 		var i = 0;
 		var character;
@@ -213,13 +226,17 @@
 			character = depPath[i];
 			if( character === "." ) {
 				
+				//if we reach a dot in the string,slice all the characters up to this point
+				//and push them into [ transformedDep ] and set startPoint to be just after the dot
 				transformedDep.push(depPath.slice(startPoint,i));
 				startPoint = i + 1;
 			
 			}
 			
 			if( i === depPath.length - 1 ) {
-			
+				
+				//once we reach the end of the string,slice from the previous dot up to the end
+				//and push it into [ transformedDep ]
 				transformedDep.push(depPath.slice(startPoint));
 			
 			}
@@ -237,7 +254,7 @@
 	
 	
 	//return a more easily processed version of the dependencies array
-	function $parseDependencies(depsArray) {
+	function $parseDependencies(depsArray,DATAOBJECT) {
 		
 		var parsedDeps = [];
 		
@@ -245,14 +262,14 @@
 		depsArray.forEach(function(dep,index,depsArray) {
 		
 			//if any of the elements in depsArray have a dot in them treat them as object paths
-			//and call the $transformDep() function to divide each property into a nested array
+			//and call the $transformObjPath() function to divide each property into a nested array
 			if( dep.includes(".") ) {
 				
-				//process string to create multi-dimensional array to represent nested object properties
-				parsedDeps.push($transformDep(dep));
+				//process string to create array where each element represents a property on the data object
+				parsedDeps.push($transformObjPath(dep));
 			
 			} else {
-			
+				
 				parsedDeps.push(dep);
 			
 			}
@@ -265,63 +282,71 @@
 	
 	
 	
-	function $depsChanged(computedProp) {
-
-		var depValues = [];
-		var obj = data;
-		
+	function $extractValues(dependencies,DATAOBJECT) {
+	
+		var values = [];
+		var obj = DATAOBJECT;
+	
 		//iterate through all the property strings
-		computedProp.deps.forEach(function(dep,index,depsArray) {
+		dependencies.forEach(function(dep,index,depsArray) {
 			
 			//check if any of the dep strings is an array
-			if( Array.isArray(dep) ) {
+			if( $typeOf(dep) === "array" ) {
 				
-				//iterate through each element in array to recreate object path
+				//if any of the dependency strings are arrays iterate through them.
+				//Each element is a string and will be a property leading us to the dependency deeper whithin the object
 				dep.forEach(function(nestedProp,index,objectPath) {
 					
+					//set obj to be an object one level deeper as we traverse down the object path to the dependency
 					obj = obj[nestedProp];
 				
 				});
 				
-				depValues.push(obj);
-				obj = data;
+				values.push(obj);
+				obj = DATAOBJECT;
 			
 			} else {
 			
-				//just use the string as a first-level property name on the data object
-				depValues.push(data[dep]);
+				//just use the string as a top-level property name on the data object
+				values.push(DATAOBJECT[dep]);
 			
 			}
 		
-		});
+		});	
 
+		return values;
+	
 	}
 	
 	
 	
-	function $shouldCompute(registrarKey,computedPropName) {
+	function $depsChanged(computedProp,DATAOBJECT) {
+
+		var currentValues = $extractValues(computedProp.deps);
+		var cachedValues = computedProp.cachedDeps;
+		var i = 0;
 		
+		//first check if both arrays of dependencies have the same number of elements
+		if( currentValues.length === cachedValues.length ) {
 		
-		//go to the key in $computedRegistrar and search through its computed property records and find the record that has the same
-		//name as the computedPropName parameter
-		var computedProp = $computedRegistrar.get(registrarKey).find(function(computedPropRecord,index,computedPropsArray) {
-		
-			return computedPropRecord.name === computedPropName;
-		
-		});
-		
-		/*
-			If the computed property doesn't have a result previously cached,return true.
-			If the computed property does have a cachedResult(other than null),check if it's dependencies have changed
-			if the dependencies have changed,return true,otherwise,false.
-		*/
-		if( computedProp.cachedResult === null || $depsChanged(computedProp) === true ) {
-		
-			return true;
-		
-		} else {
+			//loop through the arrays and compare each value
+			//if there are any values that don't match,return true
+			while( i < currentValues.length ) {
+			
+				if( currentValues[i] !== cachedValues[i] ) {
+				
+					return true;
+				
+				}
+			
+			}
 			
 			return false;
+		
+		} else {
+		
+			console.log("current dependencies and cached dependencies are different based on length");
+			return true;
 		
 		}
 
@@ -329,16 +354,62 @@
 	
 	
 	
-	//'this' is set,using .call(), by $generateComputed to be the object on which the computed property is defined
-	function $cacheResult(result,computedPropName) {
+	function $shouldCompute(searchParams,DATAOBJECT) {
+		
+		//get the computed property currently invoked
+		var computedProp = $findComputed(searchParams);
+		
+		//if there are no dependencies to keep track of
+		if( computedProp.deps !== null ) {
+		
+			//if this computed property has not been accessed yet,return true,otherwise: false.
+			if( !computedProp.called ) {
+			
+				return true;
+			
+			} else {
+			
+				return false;
+			
+			}
+		
+		} 
+		//if there are dependencies to keep track of
+		else {
+		
+			//if the computed property has not been accessed yet or the dependencies
+			//have changed since the last call,return true.
+			if( !computedProp.called || $depsChanged(computedProp) ) {
+			
+				return true;
+			
+			} else {
+			
+				return false;
+			
+			}
+		
+		}
+
+	}
 	
-		var computedProp = $computedRegistrar.get(this).find(function(computedPropRecord,index,computedPropsArray) {
-		
-			return computedPropRecord.name === computedPropName;
-		
-		});
+	
+	
+	function $getCachedResult(searchParams) {
+	
+		return $findComputed(searchParams).cachedResult;
+	
+	}
+	
+	
+	
+	//'this' is set,using .call(), by $generateComputed to be the object on which the computed property is defined
+	function $cacheResult(searchParams,result,deps,DATAOBJECT) {
+	
+		var computedProp = $findComputed(searchParams);
 		
 		computedProp.cachedResult = result;
+		computedProp.cachedDeps = deps;
 		
 	
 	}
@@ -353,7 +424,12 @@
 		If no dependencies have changed and there is a cached result of fn,deliver the cached result
 
 	*/
-	function $generateComputed(deps,name,fn) {
+	function $generateComputed(deps,name,fn,DATAOBJECT) {
+	
+		var searchParams = {
+			key: this,
+			propName: name
+		};
 		
 		//define the computed property
 		Object.defineProperty(this,name,{
@@ -367,15 +443,15 @@
 		get: function() {
 		
 			//store a boolean telling whether to pull a result from the $computedRegistrar,or call fn again
-			var reCompute = $shouldCompute(this,name);
+			var reCompute = $shouldCompute( searchParams );
 			
 			if( reCompute ) {
 			
-				$cacheResult.call(this,fn.bind(this)(),name);
+				$cacheResult.call( this, searchParams, fn.bind(this)(), $extractValues( $parseDependencies(deps) ) );
 			
 			} else {
 			
-				return $getFromCache(this,name);
+				return $getCachedResult(searchParams);
 			
 			}
 			
@@ -397,14 +473,14 @@
 		
 			//if this object is recorded in the computed properties cache,add a new record for this new computed property
 			var computedRecords = $computedRegistrar.get(this);
-			computedRecords.push( { name: name, deps: $parseDependencies(deps), depsCache:null cachedResult: null } );
+			computedRecords.push( { name: name, deps: $parseDependencies(deps), cachedDeps:null cachedResult: null } );
 		
 		} else {
 		
 			//if this object doesn't have any computed properties in the computed properties registrar,add this object as a key in the $computedRegistrar weakmap
 			//and push an object corresponding to this computed property into the registrar under this object's key
 			$computedRegistrar.set(this,[
-				{ name: name, deps: $parseDependencies(deps), depsCache: null, cachedResult: null }
+				{ name: name, deps: $parseDependencies(deps), cachedDeps: null, cachedResult: null }
 			]);
 		
 		}
