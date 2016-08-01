@@ -200,18 +200,18 @@
 	*/
 	
 	function $findComputed(searchParams) {
-	
-		return $computedRegistrar.get(searchParams.key).find(function(computedProp,index,computedRegistrar) {
+
+		return $computedRegistry.get(searchParams.key).find(function(computedProp,index,computedRegistrar) {
 		
 			return computedProp.name === searchParams.propName;
 		
 		});
-	
+
 	}
-	
-	
+
+
 	//transform a deep dependency string into an array for each object property level
-	function $transformObjPath(depString,DATAOBJECT) {
+	function $transformObjPath(depString) {
 
 		//call .toString() to get raw string from possible String object which may contain enumerable properties
 		//that will interfere with iterating through the string. .toString() is synonymous with .toValue() in the context of string objects
@@ -250,11 +250,11 @@
 		return transformedDep;
 
 	}
-	
-	
-	
-	//return a more easily processed version of the dependencies array
-	function $parseDependencies(depsArray,DATAOBJECT) {
+
+
+
+	//loop through the array of dependency strings and proccess any of them that are deep object paths using $transformObjPath()
+	function $parseDependencies(depsArray) {
 		
 		var parsedDeps = [];
 		
@@ -277,16 +277,18 @@
 		});
 		
 		return parsedDeps;
-	
+
 	}
-	
-	
-	
+
+
+
+	//query any properties specified by deep object paths in dependency strings
 	function $extractValues(dependencies,DATAOBJECT) {
-	
+
 		var values = [];
 		var obj = DATAOBJECT;
-	
+
+
 		//iterate through all the property strings
 		dependencies.forEach(function(dep,index,depsArray) {
 			
@@ -308,27 +310,28 @@
 			} else {
 			
 				//just use the string as a top-level property name on the data object
-				values.push(DATAOBJECT[dep]);
+				values.push(dep);
 			
 			}
 		
 		});	
 
 		return values;
-	
-	}
-	
-	
-	
-	function $depsChanged(computedProp,DATAOBJECT) {
 
-		var currentValues = $extractValues(computedProp.deps);
+	}
+
+
+
+	function $depsChanged(computedProp,DATAOBJECT) {
+		
+		//current values of listed dependencies
+		var currentValues = $extractValues(computedProp.deps,DATAOBJECT);
+		//values of listed dependencies from last time computed property was accessed
 		var cachedValues = computedProp.cachedDeps;
 		var i = 0;
-		
 		//first check if both arrays of dependencies have the same number of elements
 		if( currentValues.length === cachedValues.length ) {
-		
+			
 			//loop through the arrays and compare each value
 			//if there are any values that don't match,return true
 			while( i < currentValues.length ) {
@@ -338,6 +341,7 @@
 					return true;
 				
 				}
+				i++;
 			
 			}
 			
@@ -351,17 +355,17 @@
 		}
 
 	}
-	
-	
-	
+
+
+
 	function $shouldCompute(searchParams,DATAOBJECT) {
 		
 		//get the computed property currently invoked
 		var computedProp = $findComputed(searchParams);
-		
+
 		//if there are no dependencies to keep track of
-		if( computedProp.deps !== null ) {
-		
+		if( computedProp.deps === null ) {
+			
 			//if this computed property has not been accessed yet,return true,otherwise: false.
 			if( !computedProp.called ) {
 			
@@ -376,15 +380,20 @@
 		} 
 		//if there are dependencies to keep track of
 		else {
-		
+			
 			//if the computed property has not been accessed yet or the dependencies
 			//have changed since the last call,return true.
-			if( !computedProp.called || $depsChanged(computedProp) ) {
 			
+			if( computedProp.called === false )   {
+				
+				return true;
+			
+			} else if( $depsChanged(computedProp,DATAOBJECT) === true ) {
+				
 				return true;
 			
 			} else {
-			
+				
 				return false;
 			
 			}
@@ -392,66 +401,67 @@
 		}
 
 	}
-	
-	
-	
+
+
+
 	function $getCachedResult(searchParams) {
-	
+
 		return $findComputed(searchParams).cachedResult;
-	
+
 	}
-	
-	
-	
+
+
+
 	//'this' is set,using .call(), by $generateComputed to be the object on which the computed property is defined
-	function $cacheResult(searchParams,result,deps,DATAOBJECT) {
-	
+	function $cacheResult(searchParams,result,deps) {
+
 		var computedProp = $findComputed(searchParams);
 		
 		computedProp.cachedResult = result;
 		computedProp.cachedDeps = deps;
 		computedProp.called = true;
 		
-	
+
 	}
-	
-	
-	
+
+
+
 	/*
 
-		Defines a getter-only property on the specified calling object
+		Defines a getter-only property on the calling object
 		the getter is our own function which first checks if any of the dependencies have changed.
 		If any of the dependencies have changed(or if this is the first time the computed property has been accessed) then call fn.
 		If no dependencies have changed and there is a cached result of fn,deliver the cached result
 
 	*/
 	function $generateComputed(deps,name,fn,DATAOBJECT) {
-	
+		
 		var searchParams = {
 			key: this,
 			propName: name
 		};
-		
+
 		//define the computed property
 		Object.defineProperty(this,name,{
-	
+
 		configurable: true,
 		
 		enumerable: true,
 		
-		writable: false,
-		
 		get: function() {
-		
-			//store a boolean telling whether to pull a result from the $computedRegistrar,or call fn again
-			var reCompute = $shouldCompute( searchParams );
 			
-			if( reCompute ) {
-			
-				$cacheResult.call( this, searchParams, fn.bind(this)(), $extractValues( $parseDependencies(deps) ) );
-			
+			//store a boolean telling whether to pull a result from the $computedRegistry,or call fn again
+			var compute = $shouldCompute(searchParams,DATAOBJECT);
+
+			if( compute === true ) {
+				
+				var computeResult = fn.bind(this)();
+				$cacheResult( searchParams, computeResult, $extractValues( $parseDependencies(deps),DATAOBJECT ) );
+				return computeResult;
+
 			} else {
 			
+				console.log("Returning cached result");
 				return $getCachedResult(searchParams);
 			
 			}
@@ -470,26 +480,48 @@
 		
 		
 		//logic for registering the computed property
-		if( $computedRegistrar.has(this) ) {
+		if( $computedRegistry.has(this) ) {
 		
 			//if this object is recorded in the computed properties cache,add a new record for this new computed property
-			var computedRecords = $computedRegistrar.get(this);
-			computedRecords.push( { name: name, deps: $parseDependencies(deps), cachedDeps:null cachedResult: null } );
+			var computedRecords = $computedRegistry.get(this);
+			computedRecords.push( { name: name, deps: $parseDependencies(deps), cachedDeps: $extractValues( $parseDependencies(deps),DATAOBJECT ), cachedResult: null,called: false } );
 		
 		} else {
 		
-			//if this object doesn't have any computed properties in the computed properties registrar,add this object as a key in the $computedRegistrar weakmap
-			//and push an object corresponding to this computed property into the registrar under this object's key
-			$computedRegistrar.set(this,[
-				{ name: name, deps: $parseDependencies(deps), cachedDeps: null, cachedResult: null }
+			//if this object doesn't have any computed properties in the computed properties registry,add this object as a key in the $computedRegistry weakmap
+			//and push an object corresponding to this computed property into the registry under this object's key
+			$computedRegistry.set(this,[
+				{ name: name, deps: $parseDependencies(deps), cachedDeps: $extractValues( $parseDependencies(deps),DATAOBJECT ), cachedResult: null,called: false }
 			]);
 		
 		}
-	
+
 	}
 	
 	/*
 		END SECTION: Computed Properties
+	*/
+	
+	
+	
+	/*
+		START SECTION: Collections
+	*/
+	
+	/*var Collection = {
+	
+		create: function(nativeCollection) {
+		
+			var col = Object.create(this);
+			col.root = nativeCollection;
+			return col;
+		
+		}
+		
+	};*/
+	
+	/*
+		END SECTION: Collections
 	*/
 	
 	
@@ -500,7 +532,13 @@
 	
 	var DataUtils = {
 		
-		computed: $generateComputed
+		computed: $generateComputed,
+		
+		types: {
+			typeOf: $typeOf
+		},
+		
+		Collection: Collection
 	};
 	
 	
