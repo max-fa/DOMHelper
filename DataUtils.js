@@ -150,14 +150,24 @@
 	*/
 	
 	function $typeOf(obj) {
-	
-		if( typeof obj === "string" ) {
 		
-			return "string";
+		if( obj === null ) {
+		
+			return "null";
+		
+		} else if( typeof obj === "undefined" ) {
+		
+			return "undefined";
 		
 		} else if( typeof obj === "number" ) {
 		
 			return "number";
+		
+		}
+		
+		if( typeof obj === "string" ) {
+		
+			return "string";
 		
 		} else if( typeof obj === "function" ) {
 		
@@ -167,24 +177,16 @@
 		
 			return "array";
 		
-		} else if( obj.isPrototypeOf ) {
-		
-			return "object";
-		
-		} else if( typeof obj === "undefined" ) {
-		
-			return "undefined";
-		
-		} else if( obj === "null" ) {
-		
-			return "null";
-		
 		} else if( obj === true || obj === false ) {
 		
 			return "boolean";
 		
+		} else if( obj.isPrototypeOf ) {
+		
+			return "object";
+		
 		}
-	
+
 	}
 	
 	/*
@@ -310,7 +312,7 @@
 			} else {
 			
 				//just use the string as a top-level property name on the data object
-				values.push(dep);
+				values.push(obj[dep]);
 			
 			}
 		
@@ -505,40 +507,25 @@
 	
 	
 	/*
-		START SECTION: Collections
-	*/
-	
-	/*var Collection = {
-	
-		create: function(nativeCollection) {
-		
-			var col = Object.create(this);
-			col.root = nativeCollection;
-			return col;
-		
-		}
-		
-	};*/
-	
-	/*
-		END SECTION: Collections
-	*/
-	
-	
-	
-	/*
 		START SECTION: Exposing API
 	*/
 	
 	var DataUtils = {
+	
+		genComputed: function(host,deps,name,fn,DATAOBJECT) {
 		
-		computed: $generateComputed,
+			$generateComputed.call(host,deps,name,fn,DATAOBJECT);
 		
-		types: {
-			typeOf: $typeOf
 		},
 		
-		Collection: Collection
+		typeOf: $typeOf,
+		
+		DataObject: {
+		
+			
+		
+		}
+		
 	};
 	
 	
