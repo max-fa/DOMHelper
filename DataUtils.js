@@ -512,14 +512,6 @@
 	
 	*/
 	
-	
-	
-	/*
-	
-		END SECTION: Observables
-	
-	*/
-	
 	var Observable = {
 
 		listeners: [],
@@ -586,7 +578,15 @@
 		
 		}
 
-	};
+	};	
+	
+	/*
+	
+		END SECTION: Observables
+	
+	*/
+	
+
 	
 	/*
 	
