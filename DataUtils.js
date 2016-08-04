@@ -507,12 +507,180 @@
 	
 	
 	/*
+	
+		START SECTION: Collections
+	
+	*/
+	
+	function $filterObservers(observers,evt) {
+		
+		return observers.filter(function(observer,index,observers) {	
+		
+			if( observer.event === evt ) {
+			
+				return true;
+			
+			} else {
+			
+				return false;
+			
+			}
+		
+		});
+	
+	}
+	
+
+	
+	//the prototype object for all collection wrappers for arrays
+	var ArrayCollection = {
+		
+			arr: [1,2,3,4,5],
+			
+			observers: [],
+		
+			push: function(el) {
+			
+				var saved = this.arr.slice(0);
+				this.arr.push(el);
+			
+				$filterObservers("add").forEach(function(observer,index,observers) {
+					
+					//call each observer with 'this' set to a copy of the expanded array,
+					//and a copy of the array before the element was added to it,and the element that was added
+					observer.call(this.arr.slice(0),saved,el);
+				
+				},this);
+				
+				return this;
+			
+			},
+			
+			pop: function() {
+			
+				var saved = this.arr.slice(0);
+				var popped = this.arr.pop();
+			
+				$filterObservers("remove").forEach(function(observer,index,observers) {
+					
+					//call each observer with 'this' set to a copy of the popped array,
+					//a copy of the array before it was popped,and the element that was removed from the array
+					observer.call(saved,this.arr.slice(0),popped);
+				
+				},this);
+				
+				return this;
+			
+			},
+			
+			clear: function() {
+			
+				var saved = this.arr.slice(0);
+				this.arr.length = 0;
+			
+				$filterObservers("clear").forEach(function(observer,index,observers) {
+					
+					//call each observer with 'this' set to a copy of the cleared array,
+					//and a copy of the array before it was cleared
+					observer.call(this.arr.slice(0),saved.slice(0));
+				
+				},this);
+				
+				return this;				
+			
+			},
+			
+			
+		
+	};
+
+	//when 'length' property is accessed or set defer operation to ArrayCollection.arr rather than directly on ArrayCollection
+	Object.defineProperty(ArrayCollection,"length",{
+
+		enumerable: true,
+		
+		get: function() {
+		
+			return this.arr.length;
+		
+		},
+		
+		set: function(length) {
+		
+			this.arr.length = length;
+		
+		}
+
+	});
+
+
+	//get all property names on Array.prototype,filtering out 'length','push','pop',and 'constructor'
+	//and copy them onto ArrayCollection,making them refer to the actual array methods on ArrayCollection.arr
+	//ignore Symbols for now
+	Object.getOwnPropertyNames(Array.prototype).forEach(function(name,index,names) {
+
+		if( name === "length" || name === "push" || name === "pop" || name === "constructor" ) {
+		
+			return;
+		
+		} else {
+		
+			Object.defineProperty(ArrayCollection,name,{
+				
+					enumerable: true,
+					
+					configurable: true,
+					
+					get: function() {
+					
+						//when this method is accessed,pull in same-named version from 'this' object's arr array
+						//and set it's 'this' value to that array,because returning that method to be called on ArrayCollection calls it in the context of ArrayCollection
+						return this.arr[name].bind(this.arr);
+					
+					},
+					
+					set: function(val) {
+					
+						this[name] = val;
+					
+					}
+				
+			});	
+		
+		}
+		
+	});
+	
+	
+	
+	
+	
+
+	function $collectionizeArray(arr) {
+	
+		var collection = {
+
+		};
+		
+		return collection;
+	
+	}
+	
+	/*
+	
+		END SECTION: Collections
+	
+	*/
+	
+	
+	
+	/*
 		START SECTION: Exposing API
 	*/
 	
 	var DataUtils = {
 	
-		genComputed: function(host,deps,name,fn,DATAOBJECT) {
+		computed: function(host,deps,name,fn,DATAOBJECT) {
 		
 			$generateComputed.call(host,deps,name,fn,DATAOBJECT);
 		
@@ -520,9 +688,22 @@
 		
 		typeOf: $typeOf,
 		
-		DataObject: {
+		collection: function(obj) {
 		
+			if( $typeOf(obj) === "object" ) {
 			
+				return $collectionizeObject(obj);
+			
+			} else if( $typeOf(obj) === "array" ) {
+			
+				return $collectionizeArray(obj);
+			
+			} else {
+			
+				console.log("Must pass in either an object or array");
+				return false;
+			
+			}
 		
 		}
 		
