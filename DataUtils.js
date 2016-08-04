@@ -508,6 +508,88 @@
 	
 	/*
 	
+		START SECTION: Observables
+	
+	*/
+	
+	
+	
+	/*
+	
+		END SECTION: Observables
+	
+	*/
+	
+	var Observable = {
+
+		listeners: [],
+		
+		events: [],
+		
+		listenFor: function(evt,callback) {
+		
+			var hasEvent = this.events.find(function(event,index,events) {
+			
+				return evt === event;
+			
+			});
+			
+			
+			//if event is valid,add an object to listeners with info regarding what event it's listening for and a function to call when that event is fired
+			if( hasEvent !== undefined ) {
+			
+				this.listeners.push({
+				
+					event: evt,
+					
+					handler: callback
+				
+				});
+			
+			} else {
+			
+				console.log("Cannot find event.");
+				return false;
+			
+			}
+		
+		},
+		
+		fireEvent: function(evt,context,data) {
+		
+			this.listeners.filter(function(listener,index,listeners) {
+			
+				if( listener.event === evt ) {
+				
+					return true;
+				
+				} else {
+				
+					return false;
+				
+				}
+			
+			}).forEach(function(listener,index,listeners) {
+			
+				if( listener !== undefined ) {
+				
+				listener.handler.apply(context,data);
+				
+				} else {
+				
+					console.log("No listeners");
+				
+				}
+				
+			
+			});
+		
+		}
+
+	};
+	
+	/*
+	
 		START SECTION: Collections
 	
 	*/
@@ -536,8 +618,6 @@
 	var ArrayCollection = {
 		
 			arr: [],
-			
-			observers: [],
 		
 			push: function(el) {
 			
