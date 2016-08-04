@@ -594,26 +594,6 @@
 	
 	*/
 	
-	function $filterObservers(observers,evt) {
-		
-		return observers.filter(function(observer,index,observers) {	
-		
-			if( observer.event === evt ) {
-			
-				return true;
-			
-			} else {
-			
-				return false;
-			
-			}
-		
-		});
-	
-	}
-	
-
-	
 	//the prototype object for all collection wrappers for arrays
 	var ArrayCollection = {
 		
@@ -621,16 +601,10 @@
 		
 			push: function(el) {
 			
-				var saved = this.arr.slice(0);
+				var beforeChange = this.arr.slice(0);
 				this.arr.push(el);
-			
-				$filterObservers("add").forEach(function(observer,index,observers) {
-					
-					//call each observer with 'this' set to a copy of the expanded array,
-					//and a copy of the array before the element was added to it,and the element that was added
-					observer.call(this.arr.slice(0),saved,el);
 				
-				},this);
+				this.fireEvent("added",this,[beforeChange,el]);
 				
 				return this;
 			
@@ -638,16 +612,10 @@
 			
 			pop: function() {
 			
-				var saved = this.arr.slice(0);
+				var beforeChange = this.arr.slice(0);
 				var popped = this.arr.pop();
-			
-				$filterObservers("remove").forEach(function(observer,index,observers) {
-					
-					//call each observer with 'this' set to a copy of the popped array,
-					//a copy of the array before it was popped,and the element that was removed from the array
-					observer.call(saved,this.arr.slice(0),popped);
 				
-				},this);
+				this.fireEvent("popped",this,[beforeChange,popped]);
 				
 				return this;
 			
@@ -655,16 +623,10 @@
 			
 			clear: function() {
 			
-				var saved = this.arr.slice(0);
+				var beforeChange = this.arr.slice(0);
 				this.arr.length = 0;
-			
-				$filterObservers("clear").forEach(function(observer,index,observers) {
-					
-					//call each observer with 'this' set to a copy of the cleared array,
-					//and a copy of the array before it was cleared
-					observer.call(this.arr.slice(0),saved.slice(0));
 				
-				},this);
+				this.fireEvent("cleared",this,[beforeChange]);
 				
 				return this;				
 			
@@ -673,6 +635,14 @@
 			
 		
 	};
+	
+	//make ArrayCollection(and all objects inheriting from it)observable
+	Object.assign(ArrayCollection,Observable);	
+	
+	//add events for ArrayCollection
+	ArrayCollection.events.push("added");
+	ArrayCollection.events.push("popped");
+	ArrayCollection.events.push("cleared");
 
 	//when 'length' property is accessed or set defer operation to ArrayCollection.arr rather than directly on ArrayCollection
 	Object.defineProperty(ArrayCollection,"length",{
@@ -731,21 +701,6 @@
 		
 	});
 	
-	
-	
-	
-	
-
-	function $collectionizeArray(arr) {
-	
-		var collection = {
-
-		};
-		
-		return collection;
-	
-	}
-	
 	/*
 	
 		END SECTION: Collections
@@ -772,11 +727,13 @@
 		
 			if( $typeOf(obj) === "object" ) {
 			
-				return $collectionizeObject(obj);
+				
 			
 			} else if( $typeOf(obj) === "array" ) {
 			
-				return $collectionizeArray(obj);
+				var collection = Object.create(ArrayCollection);
+				collection.arr = obj;
+				return collection;
 			
 			} else {
 			
