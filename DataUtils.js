@@ -535,7 +535,7 @@
 	//the prototype object for all collection wrappers for arrays
 	var ArrayCollection = {
 		
-			arr: [1,2,3,4,5],
+			arr: [],
 			
 			observers: [],
 		
