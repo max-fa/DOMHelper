@@ -604,7 +604,7 @@
 				var beforeChange = this.arr.slice(0);
 				this.arr.push(el);
 				
-				this.fireEvent("added",this,[beforeChange,el]);
+				this.fireEvent("pushed",this,[beforeChange,el]);
 				
 				return this;
 			
@@ -631,18 +631,30 @@
 				return this;				
 			
 			},
-			
-			
 		
+			get: function(index) {
+			
+				return this.arr[index];
+			
+			},
+		
+			set: function(index,val) {
+				
+				this.fireEvent("set",this,[index,val]);
+				this.arr[index] = val;
+			
+			}
+			
 	};
 	
 	//make ArrayCollection(and all objects inheriting from it)observable
 	Object.assign(ArrayCollection,Observable);	
 	
 	//add events for ArrayCollection
-	ArrayCollection.events.push("added");
+	ArrayCollection.events.push("pushed");
 	ArrayCollection.events.push("popped");
 	ArrayCollection.events.push("cleared");
+	ArrayCollection.events.push("set");
 
 	//when 'length' property is accessed or set defer operation to ArrayCollection.arr rather than directly on ArrayCollection
 	Object.defineProperty(ArrayCollection,"length",{
@@ -710,6 +722,22 @@
 	
 	
 	/*
+	
+		START SECTION: DataObject
+	
+	*/
+	
+	var DataObject = Object.assign({},Observable);
+	
+	/*
+	
+		END SECTION: DataObject
+		
+	*/
+	
+	
+	
+	/*
 		START SECTION: Exposing API
 	*/
 	
@@ -742,7 +770,9 @@
 			
 			}
 		
-		}
+		},
+		
+		Observable: Observable
 		
 	};
 	
