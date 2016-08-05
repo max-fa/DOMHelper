@@ -430,75 +430,80 @@
 
 	/*
 
-		Defines a getter-only property on the calling object
+		Computable.generateComputed defines a getter-only property on the calling object
 		the getter is our own function which first checks if any of the dependencies have changed.
 		If any of the dependencies have changed(or if this is the first time the computed property has been accessed) then call fn.
 		If no dependencies have changed and there is a cached result of fn,deliver the cached result
 
 	*/
-	function $generateComputed(deps,name,fn,DATAOBJECT) {
-		
-		var searchParams = {
-			key: this,
-			propName: name
-		};
+	
+	var Computable = {
 
-		//define the computed property
-		Object.defineProperty(this,name,{
-
-		configurable: true,
-		
-		enumerable: true,
-		
-		get: function() {
+		generateComputed: function(deps,name,fn) {
 			
-			//store a boolean telling whether to pull a result from the $computedRegistry,or call fn again
-			var compute = $shouldCompute(searchParams,DATAOBJECT);
+			var searchParams = {
+				key: this,
+				propName: name
+			};
 
-			if( compute === true ) {
+			//define the computed property
+			Object.defineProperty(this,name,{
+
+			configurable: true,
+			
+			enumerable: true,
+			
+			get: function() {
 				
-				var computeResult = fn.bind(this)();
-				$cacheResult( searchParams, computeResult, $extractValues( $parseDependencies(deps),DATAOBJECT ) );
-				return computeResult;
+				//store a boolean telling whether to pull a result from the $computedRegistry,or call fn again
+				var compute = $shouldCompute(searchParams,this);
 
-			} else {
+				if( compute === true ) {
+					
+					var computeResult = fn.bind(this)();
+					$cacheResult( searchParams, computeResult, $extractValues( $parseDependencies(deps),this ) );
+					return computeResult;
+
+				} else {
+				
+					console.log("Returning cached result");
+					return $getCachedResult(searchParams);
+				
+				}
+				
+			},
 			
-				console.log("Returning cached result");
-				return $getCachedResult(searchParams);
+			set: function(val) {
+			
+				console.log("Cannot set a computed property,you can only access or delete them.");
+				return false;
 			
 			}
 			
-		},
-		
-		set: function(val) {
-		
-			console.log("Cannot set a computed property,you can only access or delete them.");
-			return false;
-		
-		}
-		
-		});
-		
-		
-		
-		//logic for registering the computed property
-		if( $computedRegistry.has(this) ) {
-		
-			//if this object is recorded in the computed properties cache,add a new record for this new computed property
-			var computedRecords = $computedRegistry.get(this);
-			computedRecords.push( { name: name, deps: $parseDependencies(deps), cachedDeps: $extractValues( $parseDependencies(deps),DATAOBJECT ), cachedResult: null,called: false } );
-		
-		} else {
-		
-			//if this object doesn't have any computed properties in the computed properties registry,add this object as a key in the $computedRegistry weakmap
-			//and push an object corresponding to this computed property into the registry under this object's key
-			$computedRegistry.set(this,[
-				{ name: name, deps: $parseDependencies(deps), cachedDeps: $extractValues( $parseDependencies(deps),DATAOBJECT ), cachedResult: null,called: false }
-			]);
-		
-		}
+			});
+			
+			
+			
+			//logic for registering the computed property
+			if( $computedRegistry.has(this) ) {
+			
+				//if this object is recorded in the computed properties cache,add a new record for this new computed property
+				var computedRecords = $computedRegistry.get(this);
+				computedRecords.push( { name: name, deps: $parseDependencies(deps), cachedDeps: $extractValues( $parseDependencies(deps),this ), cachedResult: null,called: false } );
+			
+			} else {
+			
+				//if this object doesn't have any computed properties in the computed properties registry,add this object as a key in the $computedRegistry weakmap
+				//and push an object corresponding to this computed property into the registry under this object's key
+				$computedRegistry.set(this,[
+					{ name: name, deps: $parseDependencies(deps), cachedDeps: $extractValues( $parseDependencies(deps),this ), cachedResult: null,called: false }
+				]);
+			
+			}
 
-	}
+		}
+		
+	};	
 	
 	/*
 		END SECTION: Computed Properties
@@ -647,7 +652,7 @@
 			
 	};
 	
-	//make ArrayCollection(and all objects inheriting from it)observable
+	//make ArrayCollection(and all objects delegating to it)observable
 	Object.assign(ArrayCollection,Observable);	
 	
 	//add events for ArrayCollection
@@ -696,7 +701,7 @@
 					get: function() {
 					
 						//when this method is accessed,pull in same-named version from 'this' object's arr array
-						//and set it's 'this' value to that array,because returning that method to be called on ArrayCollection calls it in the context of ArrayCollection
+						//and set it's 'this' value to that array,because just plain returning that method to be called on ArrayCollection calls it in the context of ArrayCollection(a plain object)
 						return this.arr[name].bind(this.arr);
 					
 					},
@@ -722,42 +727,16 @@
 	
 	
 	/*
-	
-		START SECTION: DataObject
-	
-	*/
-	
-	var DataObject = Object.assign({},Observable);
-	
-	/*
-	
-		END SECTION: DataObject
-		
-	*/
-	
-	
-	
-	/*
 		START SECTION: Exposing API
 	*/
 	
 	var DataUtils = {
 	
-		computed: function(host,deps,name,fn,DATAOBJECT) {
-		
-			$generateComputed.call(host,deps,name,fn,DATAOBJECT);
-		
-		},
-		
 		typeOf: $typeOf,
 		
 		collection: function(obj) {
 		
-			if( $typeOf(obj) === "object" ) {
-			
-				
-			
-			} else if( $typeOf(obj) === "array" ) {
+			if( $typeOf(obj) === "array" ) {
 			
 				var collection = Object.create(ArrayCollection);
 				collection.arr = obj;
@@ -772,7 +751,9 @@
 		
 		},
 		
-		Observable: Observable
+		Observable: Observable,
+		
+		Computable: Computable
 		
 	};
 	
