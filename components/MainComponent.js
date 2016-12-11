@@ -1,1 +1,0 @@
-var MainComponent = DOMHelper.Component.create("MainComponent");

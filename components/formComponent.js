@@ -1,1 +1,0 @@
-var formComponent = DOMHelper.Component.create("testForm");
